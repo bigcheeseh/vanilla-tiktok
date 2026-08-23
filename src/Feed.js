@@ -1,7 +1,10 @@
-import { LinkedVideoList } from './LinkedVideoList.js';
+import { LinkedVideoList } from "./LinkedVideoList.js";
 
 /** prev + current + next: the minimum that lets both directions scroll instantly. */
 const POOL_SIZE = 3;
+
+/** Idle time that means inertia has stopped. `scrollend` is missing in Safari < 18. */
+const SCROLL_IDLE_MS = 120;
 
 /**
  * Binds the list to a fixed pool of recycled DOM slides.
@@ -16,42 +19,114 @@ export class Feed {
    * @param {HTMLElement} container [data-feed]
    * @param {HTMLTemplateElement} template [data-slide-template]
    * @param {LinkedVideoList} list
-   * @param {import('./VideoSource.js').VideoSource} source
    */
-  constructor(container, template, list, source) {
+  constructor(container, template, list) {
     this.container = container;
     this.template = template;
     this.list = list;
-    this.source = source;
-    /** @type {HTMLElement[]} */
+    /** @type {HTMLElement[]} kept in DOM order */
     this.slides = [];
     this.muted = true;
+    this.scrollTimer = null;
   }
 
-  async start() {
-    throw new Error('not implemented');
+  start() {
+    this.createSlides();
+    this.render();
+    this.observePlayback();
+    this.center();
+
+    this.container.addEventListener("scroll", () => {
+      clearTimeout(this.scrollTimer);
+      this.scrollTimer = setTimeout(() => this.onScrollEnd(), SCROLL_IDLE_MS);
+    }, { passive: true });
   }
 
   /** Clone the template POOL_SIZE times, insert in one fragment. */
   createSlides() {
-    throw new Error('not implemented');
+    const fragment = document.createDocumentFragment()
+    for (let i = 0; i < POOL_SIZE; i++) {
+      const slide = this.template.content.firstElementChild.cloneNode(true);
+      this.slides.push(slide);
+      fragment.append(slide);
+    }
+    this.container.append(fragment);
   }
 
   /** Write (prev, current, next) into the three slides. */
   render() {
-    throw new Error('not implemented');
+    const current = this.list.current;
+    this.bindSlide(this.slides[0], current.prev.value);
+    this.bindSlide(this.slides[1], current.value);
+    this.bindSlide(this.slides[2], current.next.value);
   }
 
   /**
-   * Play the middle slide, pause and rewind the other two.
-   * Autoplay only works while muted, and play() rejects when the browser
-   * blocks it — the rejection must be caught.
+   * @param {HTMLElement} slide
+   * @param {string} src
    */
-  updatePlayback() {
-    throw new Error('not implemented');
+  bindSlide(slide, src) {
+    const video = slide.querySelector("video");
+    if (video.dataset.src === src) return;
+
+    video.pause();
+    video.removeAttribute("src");
+    video.load();              // without this the old buffer stays in memory
+    video.src = src;
+    video.dataset.src = src;
+    video.muted = this.muted;
+  }
+
+  onScrollEnd() {
+    const slot = Math.round(this.container.scrollTop / this.container.clientHeight);
+    if (slot === 1) return;    // already centred, nothing to recycle
+
+    const forward = slot === 2;
+    forward ? this.list.next() : this.list.prev();
+
+    // Move the off-screen slide to the other end and bind the new video to it.
+    // Only that one slide is touched, so the video now on screen keeps playing.
+    const recycled = forward ? this.slides.shift() : this.slides.pop();
+    const current = this.list.current;
+
+    if (forward) {
+      this.slides.push(recycled);
+      this.container.append(recycled);
+      this.bindSlide(recycled, current.next.value);
+    } else {
+      this.slides.unshift(recycled);
+      this.container.prepend(recycled);
+      this.bindSlide(recycled, current.prev.value);
+    }
+
+    this.center();
+  }
+
+  /** Put the middle slide back on screen, without animation. */
+  center() {
+    this.container.scrollTop = this.container.clientHeight;
+  }
+
+  /** The visible slide plays; the two off-screen ones pause and rewind. */
+  observePlayback() {
+    this.observer = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => {
+        const video = entry.target;
+        if (entry.isIntersecting) {
+          video.play().catch(() => {});   // autoplay can be blocked
+        } else {
+          video.pause();
+          video.currentTime = 0;
+        }
+      }),
+      { root: this.container, threshold: 0.6 },
+    );
+
+    this.slides.forEach((slide) => this.observer.observe(slide.querySelector("video")));
   }
 
   setMuted(muted) {
-    throw new Error('not implemented');
+    this.muted = muted;
+    this.slides.forEach((slide) => (slide.querySelector("video").muted = muted));
   }
 }

@@ -1,0 +1,14 @@
+{
+  "name": "purejs-reels",
+  "version": "1.0.0",
+  "description": "Vertical short-video feed, vanilla JS",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "serve . -l 8000"
+  },
+  "packageManager": "pnpm@10.29.3",
+  "devDependencies": {
+    "serve": "^14.2.6"
+  }
+}

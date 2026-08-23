@@ -17,6 +17,7 @@ body {
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   scrollbar-width: none;
+  overflow-anchor: none;       /* we move slides ourselves; browser must not compensate */
 }
 
 .feed::-webkit-scrollbar { display: none; }
