@@ -1,7 +1,7 @@
 const POOL_SIZE = 5;
 const CENTER = Math.floor(POOL_SIZE / 2);
 
-/** Pool size buys scroll headroom; this buys buffering. Outer slides cost no traffic. */
+/** How far from the center videos are downloaded. Outer slides stay at zero traffic. */
 const PRELOAD_RADIUS = 1;
 
 /** `scrollend` is missing in Safari < 18. */
@@ -29,7 +29,7 @@ export class Feed {
     this.observePlayback();
     this.center();
 
-    // Neighbours wait so the first video gets the whole connection.
+    // Neighbors wait so the first video gets the whole connection.
     this.centerVideo().addEventListener("canplay", () => {
       this.preloadRadius = PRELOAD_RADIUS;
       this.applyPreload();
