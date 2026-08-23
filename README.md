@@ -1,4 +1,4 @@
-# Reels
+# Vanilla TikTok
 
 Vertical short-video feed. Vanilla JS, no framework, no build step.
 

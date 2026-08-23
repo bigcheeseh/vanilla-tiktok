@@ -1,7 +1,7 @@
 {
-  "name": "purejs-reels",
+  "name": "vanilla-tiktok",
   "version": "1.0.0",
-  "description": "Vertical short-video feed, vanilla JS",
+  "description": "Vertical short-video feed in vanilla JavaScript",
   "private": true,
   "type": "module",
   "scripts": {
