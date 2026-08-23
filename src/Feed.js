@@ -37,10 +37,14 @@ export class Feed {
       this.applyPreload();
     }, { once: true });
 
-    this.container.addEventListener("scroll", () => {
-      clearTimeout(this.scrollTimer);
-      this.scrollTimer = setTimeout(() => this.onScrollEnd(), SCROLL_IDLE_MS);
-    });
+    if ("onscrollend" in window) {
+      this.container.addEventListener("scrollend", () => this.onScrollEnd());
+    } else {
+      this.container.addEventListener("scroll", () => {
+        clearTimeout(this.scrollTimer);
+        this.scrollTimer = setTimeout(() => this.onScrollEnd(), SCROLL_IDLE_MS);
+      });
+    }
 
     document.addEventListener("visibilitychange", () => {
       const video = this.centerVideo();
@@ -140,7 +144,7 @@ export class Feed {
             });
           } else {
             video.pause();
-            video.currentTime = 0;
+            if (!entry.isIntersecting) video.currentTime = 0;
           }
         }),
       { root: this.container, threshold: ACTIVE_RATIO },
