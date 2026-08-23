@@ -1,6 +1,6 @@
 import { LinkedVideoList } from "./LinkedVideoList.js";
 
-/** prev + current + next: the minimum that lets both directions scroll instantly. */
+/** only (prev + current + next) sources per render */
 const POOL_SIZE = 3;
 
 /** Idle time that means inertia has stopped. `scrollend` is missing in Safari < 18. */
@@ -39,12 +39,12 @@ export class Feed {
     this.container.addEventListener("scroll", () => {
       clearTimeout(this.scrollTimer);
       this.scrollTimer = setTimeout(() => this.onScrollEnd(), SCROLL_IDLE_MS);
-    }, { passive: true });
+    });
   }
 
   /** Clone the template POOL_SIZE times, insert in one fragment. */
   createSlides() {
-    const fragment = document.createDocumentFragment()
+    const fragment = document.createDocumentFragment();
     for (let i = 0; i < POOL_SIZE; i++) {
       const slide = this.template.content.firstElementChild.cloneNode(true);
       this.slides.push(slide);
@@ -71,15 +71,17 @@ export class Feed {
 
     video.pause();
     video.removeAttribute("src");
-    video.load();              // without this the old buffer stays in memory
+    video.load();
     video.src = src;
     video.dataset.src = src;
     video.muted = this.muted;
   }
 
   onScrollEnd() {
-    const slot = Math.round(this.container.scrollTop / this.container.clientHeight);
-    if (slot === 1) return;    // already centred, nothing to recycle
+    const slot = Math.round(
+      this.container.scrollTop / this.container.clientHeight,
+    );
+    if (slot === 1) return;
 
     const forward = slot === 2;
     forward ? this.list.next() : this.list.prev();
@@ -110,23 +112,30 @@ export class Feed {
   /** The visible slide plays; the two off-screen ones pause and rewind. */
   observePlayback() {
     this.observer = new IntersectionObserver(
-      (entries) => entries.forEach((entry) => {
-        const video = entry.target;
-        if (entry.isIntersecting) {
-          video.play().catch(() => {});   // autoplay can be blocked
-        } else {
-          video.pause();
-          video.currentTime = 0;
-        }
-      }),
+      (entries) =>
+        entries.forEach((entry) => {
+          const video = entry.target;
+          if (entry.isIntersecting) {
+            video.play().catch((e) => {
+              console.warn({ autoplay_error: e });
+            });
+          } else {
+            video.pause();
+            video.currentTime = 0;
+          }
+        }),
       { root: this.container, threshold: 0.6 },
     );
 
-    this.slides.forEach((slide) => this.observer.observe(slide.querySelector("video")));
+    this.slides.forEach((slide) =>
+      this.observer.observe(slide.querySelector("video")),
+    );
   }
 
   setMuted(muted) {
     this.muted = muted;
-    this.slides.forEach((slide) => (slide.querySelector("video").muted = muted));
+    this.slides.forEach(
+      (slide) => (slide.querySelector("video").muted = muted),
+    );
   }
 }

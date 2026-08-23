@@ -12,7 +12,7 @@ const feed = new Feed(
 feed.start();
 
 const muteButton = document.querySelector("[data-mute]");
-muteButton.addEventListener("click", () => {
+muteButton?.addEventListener("click", () => {
   feed.setMuted(!feed.muted);
   muteButton.textContent = feed.muted ? "🔇" : "🔊";
 });
