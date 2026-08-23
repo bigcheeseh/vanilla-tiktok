@@ -7,6 +7,8 @@ const PRELOAD_RADIUS = 1;
 /** `scrollend` is missing in Safari < 18. */
 const SCROLL_IDLE_MS = 120;
 
+const ACTIVE_RATIO = 0.6;
+
 export class Feed {
   /**
    * @param {HTMLElement} container
@@ -132,7 +134,7 @@ export class Feed {
       (entries) =>
         entries.forEach((entry) => {
           const video = entry.target;
-          if (entry.isIntersecting) {
+          if (entry.intersectionRatio >= ACTIVE_RATIO) {
             video.play().catch((e) => {
               console.warn({ autoplay_error: e });
             });
@@ -141,7 +143,7 @@ export class Feed {
             video.currentTime = 0;
           }
         }),
-      { root: this.container, threshold: 0.6 },
+      { root: this.container, threshold: ACTIVE_RATIO },
     );
 
     this.slides.forEach((slide) =>
