@@ -1,39 +1,41 @@
 # Reels
 
-Vertical short-video feed, vanilla JS, no build step.
+Vertical short-video feed. Vanilla JS, no framework, no build step.
 
 ## Run
 
-ES modules need HTTP, `file://` will not work:
-
 ```bash
-npx serve .
+pnpm install
+pnpm start        # http://localhost:8000
 ```
+
+ES modules need HTTP — opening `index.html` as a file will not work.
 
 ## Structure
 
 ```
-index.html
+index.html            markup + slide <template>
 styles/main.css
 src/
-  main.js              entry
-  Feed.js              binds the list to 3 recycled DOM slides
-  LinkedVideoList.js   doubly-linked list with a cursor (abstract)
-  VideoSource.js       paginated source (abstract) + mock
-  videos.json          mock data
-assets/videos/         video files
+  main.js             entry
+  Feed.js             slide pool, recycling, playback
+  LinkedVideoList.js  circular doubly-linked list with a cursor
+  videos.js           video list
+assets/videos/        video files
 ```
 
-## Notes
+## Solution
 
-Videos from the task folder go to `assets/videos/` and are listed in
-`src/videos.json`. Local files rather than cloud links: cloud storage does not
-serve Range requests, so seeking and chunked loading break.
+Three slides in the DOM — prev, current, next. Scroll rests on the middle one;
+when it settles elsewhere, the off-screen slide moves to the other end, gets the
+next video, and scroll returns to the middle. Endless feed, three decoders.
 
-The feed is a doubly-linked list with a cursor. Scrolling is a `prev`/`next`
-pointer hop, appending a page is O(1), and old nodes are dropped from the head
-to bound memory. No index lookup — search belongs on the backend.
+Videos live in a circular doubly-linked list: navigation is a `prev`/`next` hop.
 
-Three `<video>` elements are created once and recycled. Native scroll with
-`scroll-snap-type: y mandatory` handles the gesture, inertia, wheel and
-trackpad, so desktop works with the same code as mobile.
+`scroll-snap-type: y mandatory` drives the gesture — swipe, wheel and trackpad
+come from the browser, so mobile and desktop share one code path.
+
+`IntersectionObserver` drives playback: one video plays, the rest are paused and
+rewound. Rebinding a slide releases the old buffer. Playback stops in background
+tabs. All three slides preload — instant swipe at the cost of three files in
+flight.

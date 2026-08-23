@@ -40,6 +40,12 @@ export class Feed {
       clearTimeout(this.scrollTimer);
       this.scrollTimer = setTimeout(() => this.onScrollEnd(), SCROLL_IDLE_MS);
     });
+
+    document.addEventListener("visibilitychange", () => {
+      const video = this.slides[1].querySelector("video");
+      if (document.hidden) video.pause();
+      else video.play().catch(() => {});
+    });
   }
 
   /** Clone the template POOL_SIZE times, insert in one fragment. */
@@ -75,6 +81,8 @@ export class Feed {
     video.src = src;
     video.dataset.src = src;
     video.muted = this.muted;
+
+    slide.querySelector("[data-meta]").textContent = src.split("/").pop();
   }
 
   onScrollEnd() {
