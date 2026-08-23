@@ -1,11 +1,11 @@
 import { Feed } from "./Feed.js";
-import { MockVideoSource } from "./VideoSource.js";
+import { LinkedVideoList } from "./LinkedVideoList.js"
+import { videos } from "./videos.js";
 
 const feed = new Feed(
   document.querySelector("[data-feed]"),
   document.querySelector("[data-slide-template]"),
-  (new LinkedVideoList()).append("./src/videos.json"),
-  // new MockVideoSource('./src/videos.json'),
+  (new LinkedVideoList()).append(videos),
 );
 
 feed.start();

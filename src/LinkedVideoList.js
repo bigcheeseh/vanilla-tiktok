@@ -4,7 +4,7 @@ export class LinkedVideoList {
     this.head = null;
     /** @type {VideoNode|null} */
     this.tail = null;
-    /** @type {VideoNode|null} cursor: the video currently on screen */
+    /** @type {VideoNode|null} cursor */
     this.current = null;
     this.size = 0;
   }
@@ -14,23 +14,17 @@ export class LinkedVideoList {
    * @param {Array<{src: string, author?: string, description?: string}>} items
    */
   append(items) {
-    this.clear()
-
     if (!items?.length) {
       console.warn("empty video list, list should contain at least one video");
       return;
     }
 
-    this.size = items.length
+    this.size = items.length;
     items.forEach((item, i) => {
       const videoNode = new VideoNode(item.src);
       if (this.tail) {
         videoNode.prev = this.tail;
-      }
-
-      const nextItem = items[i + 1];
-      if (nextItem) {
-        videoNode.next = new VideoNode(nextItem.src);
+        this.tail.next = videoNode;
       }
 
       if (!this.head) {
@@ -43,6 +37,8 @@ export class LinkedVideoList {
 
       this.tail = videoNode;
     });
+
+    return this;
   }
 
   /**
@@ -50,6 +46,8 @@ export class LinkedVideoList {
    * @returns {VideoNode|null}
    */
   next() {
+    if (!this.size) return;
+
     const next = this.current.next;
     if (!next) {
       this.current = this.head;
@@ -61,9 +59,11 @@ export class LinkedVideoList {
   }
 
   prev() {
+    if (!this.size) return;
+
     const prev = this.current.prev;
     if (!prev) {
-      this.current = this.tail
+      this.current = this.tail;
       return this.current;
     }
 
@@ -71,12 +71,11 @@ export class LinkedVideoList {
     return this.current;
   }
 
-
   init() {
     this.head = null;
+    this.tail = null;
     this.current = null;
-    this.next = null;
-    this.size = 0
+    this.size = 0;
   }
 }
 
