@@ -13,7 +13,9 @@
 
   <template data-slide-template>
     <article class="slide" data-slide>
-      <video class="slide__video" loop playsinline muted preload="auto"></video>
+      <!-- preload is raised to "auto" by Feed for the centre slide and its
+           neighbours; outer slides stay at "none" and cost no traffic. -->
+      <video class="slide__video" loop playsinline muted preload="none"></video>
       <div class="slide__meta" data-meta></div>
     </article>
   </template>

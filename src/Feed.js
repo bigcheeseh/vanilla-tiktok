@@ -1,7 +1,18 @@
 import { LinkedVideoList } from "./LinkedVideoList.js";
 
-/** only (prev + current + next) sources per render */
-const POOL_SIZE = 3;
+/** Slides kept in the DOM. Odd, so one is exactly in the middle. */
+const POOL_SIZE = 5;
+
+/** Index of the slide the scroll rests on. */
+const CENTER = Math.floor(POOL_SIZE / 2);
+
+/**
+ * How far from the centre videos are actually downloaded.
+ * Pool size buys scroll headroom; this buys buffering. They are separate:
+ * the outer slides exist only so a fast swipe never hits the container edge,
+ * and they cost no traffic while their preload stays "none".
+ */
+const PRELOAD_RADIUS = 1;
 
 /** Idle time that means inertia has stopped. `scrollend` is missing in Safari < 18. */
 const SCROLL_IDLE_MS = 120;
@@ -11,8 +22,8 @@ const SCROLL_IDLE_MS = 120;
  *
  * The <video> elements are created once and never replaced: each one is a
  * decoder, and mobile browsers cap how many can exist. After a snap settles,
- * the cursor moves, the slides are rebound to (prev, current, next) and the
- * container is silently scrolled back to the middle slide.
+ * the slides that went off screen are moved to the other end of the container
+ * and rebound, and the scroll returns to the centre.
  */
 export class Feed {
   /**
@@ -28,6 +39,8 @@ export class Feed {
     this.slides = [];
     this.muted = true;
     this.scrollTimer = null;
+    /** Starts at 0 so the first video gets the whole connection to itself. */
+    this.preloadRadius = 0;
   }
 
   start() {
@@ -36,13 +49,20 @@ export class Feed {
     this.observePlayback();
     this.center();
 
+    // Neighbours start downloading only once the first video can play,
+    // otherwise they would share the connection with it and delay the frame.
+    this.centerVideo().addEventListener("canplay", () => {
+      this.preloadRadius = PRELOAD_RADIUS;
+      this.applyPreload();
+    }, { once: true });
+
     this.container.addEventListener("scroll", () => {
       clearTimeout(this.scrollTimer);
       this.scrollTimer = setTimeout(() => this.onScrollEnd(), SCROLL_IDLE_MS);
     });
 
     document.addEventListener("visibilitychange", () => {
-      const video = this.slides[1].querySelector("video");
+      const video = this.centerVideo();
       if (document.hidden) video.pause();
       else video.play().catch(() => {});
     });
@@ -59,12 +79,28 @@ export class Feed {
     this.container.append(fragment);
   }
 
-  /** Write (prev, current, next) into the three slides. */
+  /** @returns {HTMLVideoElement} the video currently on screen */
+  centerVideo() {
+    return this.slides[CENTER].querySelector("video");
+  }
+
+  /**
+   * Walk the ring from the cursor. Negative goes back, positive forward.
+   * @param {number} offset
+   */
+  nodeAt(offset) {
+    const step = offset < 0 ? "prev" : "next";
+    let node = this.list.current;
+    for (let i = 0; i < Math.abs(offset); i++) node = node[step];
+    return node;
+  }
+
+  /** Bind every slide to its node. Unchanged slides are skipped in bindSlide. */
   render() {
-    const current = this.list.current;
-    this.bindSlide(this.slides[0], current.prev.value);
-    this.bindSlide(this.slides[1], current.value);
-    this.bindSlide(this.slides[2], current.next.value);
+    this.slides.forEach((slide, i) => {
+      this.bindSlide(slide, this.nodeAt(i - CENTER).value);
+    });
+    this.applyPreload();
   }
 
   /**
@@ -85,39 +121,53 @@ export class Feed {
     slide.querySelector("[data-meta]").textContent = src.split("/").pop();
   }
 
+  /**
+   * Download only what is close to the centre. Raising preload from "none"
+   * is what starts the fetch; slides beyond the radius stay at zero traffic.
+   */
+  applyPreload() {
+    this.slides.forEach((slide, i) => {
+      const near = Math.abs(i - CENTER) <= this.preloadRadius;
+      const video = slide.querySelector("video");
+      const value = near ? "auto" : "none";
+      if (video.preload !== value) video.preload = value;
+    });
+  }
+
   onScrollEnd() {
     const slot = Math.round(
       this.container.scrollTop / this.container.clientHeight,
     );
-    if (slot === 1) return;
+    if (slot === CENTER) return;
 
-    const forward = slot === 2;
-    forward ? this.list.next() : this.list.prev();
+    const forward = slot > CENTER;
+    const steps = Math.abs(slot - CENTER);
 
-    // Move the off-screen slide to the other end and bind the new video to it.
-    // Only that one slide is touched, so the video now on screen keeps playing.
-    const recycled = forward ? this.slides.shift() : this.slides.pop();
-    const current = this.list.current;
+    // One step per slide passed, so a fast swipe over several slides recovers
+    // in a single pass. Moving a node re-parents it — no copy is made.
+    for (let i = 0; i < steps; i++) {
+      forward ? this.list.next() : this.list.prev();
+      const recycled = forward ? this.slides.shift() : this.slides.pop();
 
-    if (forward) {
-      this.slides.push(recycled);
-      this.container.append(recycled);
-      this.bindSlide(recycled, current.next.value);
-    } else {
-      this.slides.unshift(recycled);
-      this.container.prepend(recycled);
-      this.bindSlide(recycled, current.prev.value);
+      if (forward) {
+        this.slides.push(recycled);
+        this.container.append(recycled);
+      } else {
+        this.slides.unshift(recycled);
+        this.container.prepend(recycled);
+      }
     }
 
+    this.render();
     this.center();
   }
 
-  /** Put the middle slide back on screen, without animation. */
+  /** Put the centre slide back on screen, without animation. */
   center() {
-    this.container.scrollTop = this.container.clientHeight;
+    this.container.scrollTop = CENTER * this.container.clientHeight;
   }
 
-  /** The visible slide plays; the two off-screen ones pause and rewind. */
+  /** The visible slide plays; the off-screen ones pause and rewind. */
   observePlayback() {
     this.observer = new IntersectionObserver(
       (entries) =>

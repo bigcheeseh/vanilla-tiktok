@@ -26,9 +26,10 @@ assets/videos/        video files
 
 ## Solution
 
-Three slides in the DOM — prev, current, next. Scroll rests on the middle one;
-when it settles elsewhere, the off-screen slide moves to the other end, gets the
-next video, and scroll returns to the middle. Endless feed, three decoders.
+A fixed pool of slides lives in the DOM around the cursor. Scroll rests on the
+middle one; when it settles elsewhere, the slides left behind move to the other
+end, get the next videos, and scroll returns to the middle. Endless feed, a
+constant number of decoders.
 
 Videos live in a circular doubly-linked list: navigation is a `prev`/`next` hop.
 
@@ -37,5 +38,8 @@ come from the browser, so mobile and desktop share one code path.
 
 `IntersectionObserver` drives playback: one video plays, the rest are paused and
 rewound. Rebinding a slide releases the old buffer. Playback stops in background
-tabs. All three slides preload — instant swipe at the cost of three files in
-flight.
+tabs.
+
+Pool size and preload depth are separate. Five slides give a fast swipe room to
+run; only the centre one and its two neighbours download, and they start only
+after the first video can play — so the first frame never shares the connection.
