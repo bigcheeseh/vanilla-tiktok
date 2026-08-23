@@ -1,18 +1,5 @@
-/**
- * Doubly-linked list of videos with a cursor.
- *
- * The feed only ever needs the current video and its two neighbours, so
- * navigation is a pointer hop (O(1)) and appending a fetched page is O(1).
- * There is no index lookup: nothing on the client searches by position.
- *
- * Abstract — the concrete list is implemented on top of this contract.
- */
 export class LinkedVideoList {
   constructor() {
-    if (new.target === LinkedVideoList) {
-      throw new Error('LinkedVideoList is abstract');
-    }
-
     /** @type {VideoNode|null} */
     this.head = null;
     /** @type {VideoNode|null} */
@@ -27,7 +14,35 @@ export class LinkedVideoList {
    * @param {Array<{src: string, author?: string, description?: string}>} items
    */
   append(items) {
-    throw new Error('not implemented');
+    this.clear()
+
+    if (!items?.length) {
+      console.warn("empty video list, list should contain at least one video");
+      return;
+    }
+
+    this.size = items.length
+    items.forEach((item, i) => {
+      const videoNode = new VideoNode(item.src);
+      if (this.tail) {
+        videoNode.prev = this.tail;
+      }
+
+      const nextItem = items[i + 1];
+      if (nextItem) {
+        videoNode.next = new VideoNode(nextItem.src);
+      }
+
+      if (!this.head) {
+        this.head = videoNode;
+      }
+
+      if (!this.current) {
+        this.current = videoNode;
+      }
+
+      this.tail = videoNode;
+    });
   }
 
   /**
@@ -35,20 +50,33 @@ export class LinkedVideoList {
    * @returns {VideoNode|null}
    */
   next() {
-    throw new Error('not implemented');
+    const next = this.current.next;
+    if (!next) {
+      this.current = this.head;
+      return this.current;
+    }
+
+    this.current = next;
+    return this.current;
   }
 
   prev() {
-    throw new Error('not implemented');
+    const prev = this.current.prev;
+    if (!prev) {
+      this.current = this.tail
+      return this.current;
+    }
+
+    this.current = prev;
+    return this.current;
   }
 
-  /**
-   * Drop nodes before the cursor, keeping at most `keep` of them.
-   * Bounds memory over a long session; O(1) per removed node.
-   * @param {number} keep
-   */
-  trimHistory(keep) {
-    throw new Error('not implemented');
+
+  init() {
+    this.head = null;
+    this.current = null;
+    this.next = null;
+    this.size = 0
   }
 }
 
