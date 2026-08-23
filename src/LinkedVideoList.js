@@ -36,37 +36,33 @@ export class LinkedVideoList {
       }
 
       this.tail = videoNode;
+      this.tail.next = this.head;
+      this.head.prev = this.tail;
     });
 
     return this;
   }
 
   /**
-   * Move the cursor forward/backward. Returns null at the ends.
+   * Move the cursor forward.
    * @returns {VideoNode|null}
    */
   next() {
     if (!this.size) return;
 
     const next = this.current.next;
-    if (!next) {
-      this.current = this.head;
-      return this.current;
-    }
-
     this.current = next;
     return this.current;
   }
 
+  /**
+   * Move the cursor backward.
+   * @returns {VideoNode|null}
+   */
   prev() {
     if (!this.size) return;
 
     const prev = this.current.prev;
-    if (!prev) {
-      this.current = this.tail;
-      return this.current;
-    }
-
     this.current = prev;
     return this.current;
   }
