@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Reels</title>
+  <link rel="stylesheet" href="./styles/main.css">
+</head>
+<body>
+
+  <!-- Scroll container. Exactly 3 slides live here, recycled while scrolling. -->
+  <div class="feed" data-feed>
+    <article class="slide" data-slide>
+      <video class="slide__video" loop playsinline muted preload="auto"></video>
+      <div class="slide__meta" data-meta></div>
+    </article>
+    <article class="slide" data-slide>
+      <video class="slide__video" loop playsinline muted preload="auto"></video>
+      <div class="slide__meta" data-meta></div>
+    </article>
+    <article class="slide" data-slide>
+      <video class="slide__video" loop playsinline muted preload="auto"></video>
+      <div class="slide__meta" data-meta></div>
+    </article>
+  </div>
+
+  <button class="mute" data-mute type="button">🔇</button>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
