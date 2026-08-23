@@ -66,13 +66,6 @@ export class LinkedVideoList {
     this.current = prev;
     return this.current;
   }
-
-  init() {
-    this.head = null;
-    this.tail = null;
-    this.current = null;
-    this.size = 0;
-  }
 }
 
 export class VideoNode {

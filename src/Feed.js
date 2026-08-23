@@ -1,5 +1,3 @@
-import { LinkedVideoList } from "./LinkedVideoList.js";
-
 const POOL_SIZE = 5;
 const CENTER = Math.floor(POOL_SIZE / 2);
 
@@ -13,7 +11,7 @@ export class Feed {
   /**
    * @param {HTMLElement} container
    * @param {HTMLTemplateElement} template
-   * @param {LinkedVideoList} list
+   * @param {import('./LinkedVideoList.js').LinkedVideoList} list
    */
   constructor(container, template, list) {
     this.container = container;
