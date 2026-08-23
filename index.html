@@ -8,21 +8,15 @@
 </head>
 <body>
 
-  <!-- Scroll container. Exactly 3 slides live here, recycled while scrolling. -->
-  <div class="feed" data-feed>
+  <!-- Scroll container. Feed clones the template into a fixed pool of slides. -->
+  <div class="feed" data-feed></div>
+
+  <template data-slide-template>
     <article class="slide" data-slide>
       <video class="slide__video" loop playsinline muted preload="auto"></video>
       <div class="slide__meta" data-meta></div>
     </article>
-    <article class="slide" data-slide>
-      <video class="slide__video" loop playsinline muted preload="auto"></video>
-      <div class="slide__meta" data-meta></div>
-    </article>
-    <article class="slide" data-slide>
-      <video class="slide__video" loop playsinline muted preload="auto"></video>
-      <div class="slide__meta" data-meta></div>
-    </article>
-  </div>
+  </template>
 
   <button class="mute" data-mute type="button">🔇</button>
 

@@ -3,6 +3,7 @@ import { MockVideoSource } from './VideoSource.js';
 
 const feed = new Feed(
   document.querySelector('[data-feed]'),
+  document.querySelector('[data-slide-template]'),
   null, // concrete LinkedVideoList implementation
   new MockVideoSource('./src/videos.json'),
 );

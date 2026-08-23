@@ -1,6 +1,4 @@
 node_modules/
-assets/videos/*
-!assets/videos/.gitkeep
 .DS_Store
 .vscode/
 .idea/
